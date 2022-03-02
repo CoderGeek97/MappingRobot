@@ -1,0 +1,219 @@
+#include <Servo.h>
+#include  <Wire.h>
+#include <SoftwareSerial.h>
+#include <AFMotor.h>  
+#define MAX_SPEED 120
+
+      const int trigPin = A4;
+      const int echoPin = A1;
+      long durationn;
+      int distance;
+      int Fdistance;
+      int distanceR = 0;
+      int distanceL = 0;
+      boolean goesForward=false;
+
+      int speedSet = 0;
+      int DegreeDistances0[180];
+      int DegreeDistances1[180];
+      
+AF_DCMotor motor1(1, MOTOR12_64KHZ); 
+AF_DCMotor motor2(2, MOTOR12_64KHZ);
+AF_DCMotor motor3(3, MOTOR34_64KHZ);
+AF_DCMotor motor4(4, MOTOR34_64KHZ);
+Servo servo_test;
+
+      
+ void setup() 
+ {
+ pinMode(trigPin, OUTPUT); 
+ pinMode(echoPin, INPUT); 
+ 
+  servo_test.attach(10);  
+  Serial.begin (9600);
+  Fdistance= GetDistance();
+
+ }
+ void loop() {
+
+  if( Fdistance<=35)
+ {
+  moveStop();
+  delay(100);
+  moveBackward();
+  delay(200);
+  moveStop();
+  delay(200);
+   
+ for (int c = 0; c < 180; c++)
+            {
+            ScanDegree(c);
+           delay(10);
+            
+            }
+           servo_test.write(90);
+            distanceR =DegreeDistances0[20] ;
+            distanceL =DegreeDistances0[170] ;
+         
+  if(distanceR>=distanceL)
+  {
+    turnRight(1000);
+   
+    moveStop();
+    
+  }
+  else if(distanceR<distanceL)
+  {
+    turnLeft(1000);
+   
+    moveStop();
+  }
+  
+}
+else
+{
+  moveForward();
+   
+}
+ Fdistance= GetDistance();
+ }
+ //loop is over//
+ 
+void ScanDegree(int aDegree)
+        {
+          
+          String ts=String( aDegree);
+           
+           
+           RotateServoToDegree(aDegree);
+           int dist = GetDistance();
+          
+          ts= ts+" "+ String(distance);
+          ts= ts+" "+ String(DegreeDistances0[aDegree])+" " + String(DegreeDistances1[aDegree]) ;
+           
+            
+            Serial.println (ts);
+           
+            SaveDistanceDegegree(aDegree, dist);
+           
+        }
+       
+        void RotateServoToDegree(int aDegree)
+        {
+           servo_test.write(aDegree);
+            delay(1); 
+        
+        }
+        int GetDistance()
+        {
+            int ret = 0;
+           
+            digitalWrite(trigPin, LOW);
+            delayMicroseconds(2);
+           
+            digitalWrite(trigPin, HIGH);
+            delayMicroseconds(10);
+            digitalWrite(trigPin, LOW);
+         
+            durationn = pulseIn(echoPin, HIGH);
+         
+            distance= durationn*0.034/2;
+        
+            ret= distance;
+        
+            return ret;
+        }
+        void SaveDistanceDegegree(int degree, int distance)
+        {
+            DegreeDistances1[degree] = DegreeDistances0[degree];
+
+            DegreeDistances0[degree] = distance;
+
+        }
+
+void moveStop() {
+  motor1.run(RELEASE); 
+  motor2.run(RELEASE);
+  motor3.run(RELEASE);
+  motor4.run(RELEASE);
+  } 
+
+void moveForward() {
+ 
+ if(!goesForward)
+  {
+    goesForward=true;
+    
+    motor1.run(FORWARD);      
+    motor2.run(FORWARD);
+    motor3.run(FORWARD); 
+    motor4.run(FORWARD);     
+   for (speedSet = 0; speedSet < MAX_SPEED; speedSet +=2) 
+   {
+    motor1.setSpeed(speedSet);
+    motor2.setSpeed(speedSet);
+    motor3.setSpeed(speedSet);
+    motor4.setSpeed(speedSet);
+  
+   
+      delay(5);
+   }
+ 
+  }
+  
+  
+    }
+
+ 
+void moveBackward() {
+    goesForward=false;
+    motor1.run(BACKWARD);      
+    motor2.run(BACKWARD);
+    motor3.run(BACKWARD);
+    motor4.run(BACKWARD);  
+  for (speedSet = 0; speedSet < MAX_SPEED; speedSet +=2) 
+  {
+    motor1.setSpeed(speedSet);
+    motor2.setSpeed(speedSet);
+    motor3.setSpeed(speedSet);
+    motor4.setSpeed(speedSet);
+    delay(5);
+  }
+}  
+ 
+void turnRight(int duration) {
+  
+
+
+  motor1.run(FORWARD);
+  motor2.run(FORWARD);
+  motor3.run(BACKWARD);
+  motor4.run(BACKWARD);     
+  delay(duration);
+  motor1.run(FORWARD);      
+  motor2.run(FORWARD);
+  motor3.run(FORWARD);
+  motor4.run(FORWARD);    
+
+
+   
+
+    } 
+
+ 
+void turnLeft(int duration) {
+
+ 
+  motor1.run(BACKWARD);     
+  motor2.run(BACKWARD);  
+  motor3.run(FORWARD);
+  motor4.run(FORWARD);   
+  delay(duration);
+  motor1.run(FORWARD);     
+  motor2.run(FORWARD);
+  motor3.run(FORWARD);
+  motor4.run(FORWARD);
+
+
+    }
+    
